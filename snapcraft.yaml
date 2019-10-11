@@ -170,7 +170,7 @@ apps:
     command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server --no-monitor --system-id=random start
     stop-command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server stop
     passthrough:
-      after: [ovsdb-server]
+      after: [ovsdb-server, ovs-dpdk-setup]
     daemon: forking
 #    plugs:
 #      - network
@@ -206,6 +206,11 @@ apps:
     command: ovs-wrapper $SNAP/bin/ovs-dpctl
 #    plugs:
 #      - network
+  ovs-dpdk-setup:
+    command: ovs-wrapper $SNAP/bin/ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
+    daemon: oneshot
+    passthrough:
+      after: [ovsdb-server]
 
   external-bridge:
     command: bin/setup-br-ex
@@ -307,7 +312,137 @@ apps:
 #    plugs:
 #      - network
 
+  testpmd:
+      command: dpdk/bin/testpmd
+      plugs:
+        - network
+        - network-bind
+        - network-control
+        - network-observe
+        - hardware-observe
+        #- hugepages-observe
+        #- hugepages-control
+        - process-control
+        - system-observe
+        #- dpdk-control
+        - kernel-module-control
+        - kernel-module-observe
+
+  dpdk-devbind:
+      command: dpdk/sbin/dpdk-devbind
+      plugs:
+        - network
+        - network-bind
+        - network-control
+        - network-observe
+        - hardware-observe
+        - system-observe
+        #- dpdk-control
+        - kernel-module-control
+        - kernel-module-observe
+
+  dpdk-setup:
+      command: dpdk/share/dpdk/usertools/dpdk-setup.sh
+      plugs:
+        - network
+        - network-bind
+        - network-control
+        - network-observe
+        - hardware-observe
+        #- system-observer
+        #- dpdk-control
+        - kernel-module-control
+        - kernel-module-observe
+
 parts:
+  dpdk:
+    plugin: make
+    source: git://dpdk.org/dpdk-stable
+    source-type: git
+    # source-tag: v17.11 # LTS Version, comment out or change tag to what version you require.
+    after:
+      - uca-sources
+    build-packages:
+      #- python3-dev
+      - linux-headers-4.15.0-65-generic
+      - build-essential
+    #stage-packages:
+      #- libnuma1
+      #- pciutils
+      #- hwdata
+      #- ibverbs-providers
+      #- libibverbs1
+      #- libnl-route-3-200
+      #- librte-bitratestats17.11
+      #- librte-bus-pci17.11
+      #- librte-bus-vdev17.11
+      #- librte-cmdline17.11
+      #- librte-cryptodev17.11 
+      #- librte-eal17.11
+      #- librte-ethdev17.11
+      #- librte-eventdev17.11
+      #- librte-gro17.11
+      #- librte-gso17.11
+      #- librte-hash17.11
+      #- librte-kni17.11
+      #- librte-kvargs17.11
+      #- librte-latencystats17.11
+      #- librte-mbuf17.11
+      #- librte-mempool-octeontx17.11
+      #- librte-mempool-ring17.11
+      #- librte-mempool-stack17.11
+      #- librte-mempool17.11
+      #- librte-metrics17.11
+      #- librte-net17.11
+      #- librte-pci17.11
+      #- librte-pdump17.11
+      #- librte-pmd-af-packet17.11
+      #- librte-pmd-ark17.11
+      #- librte-pmd-avp17.11
+      #- librte-pmd-bnxt17.11
+      #- librte-pmd-bond17.11
+      #- librte-pmd-crypto-scheduler17.11
+      #- librte-pmd-cxgbe17.11 
+      #- librte-pmd-e1000-17.11
+      #- librte-pmd-ena17.11
+      #- librte-pmd-enic17.11
+      #- librte-pmd-failsafe17.11
+      #- librte-pmd-fm10k17.11
+      #- librte-pmd-i40e17.11
+      #- librte-pmd-ixgbe17.11
+      #- librte-pmd-kni17.11
+      #- librte-pmd-lio17.11
+      #- librte-pmd-mlx4-17.11
+      #- librte-pmd-mlx5-17.11
+      #- librte-pmd-nfp17.11
+      #- librte-pmd-null-crypto17.11
+      #- librte-pmd-null17.11
+      #- librte-pmd-octeontx-ssovf17.11
+      #- librte-pmd-octeontx17.11
+      #- librte-pmd-pcap17.11
+      #- librte-pmd-qede17.11
+      #- librte-pmd-ring17.11 
+      #- librte-pmd-sfc-efx17.11
+      #- librte-pmd-skeleton-event17.11
+      #- librte-pmd-softnic17.11
+      #- librte-pmd-sw-event17.11
+      #- librte-pmd-tap17.11
+      #- librte-pmd-thunderx-nicvf17.11
+      #- librte-pmd-vhost17.11
+      #- librte-pmd-virtio17.11
+      #- librte-pmd-vmxnet3-uio17.11
+      #- librte-ring17.11
+      #- librte-sched17.11
+      #- librte-vhost17.11
+      #- python3-pyelftools
+    override-build: |
+      #snapcraftctl build
+      # TODO: figure out why staging libraries conflict with other parts packages
+      unset CPPFLAGS
+      # make V=1 for verbose
+      make install T=x86_64-native-linuxapp-gcc DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic # RTE_KERNELDIR is only needed if kernel version is not the same as installed on build host.
+      #snapcraftctl build
+
   # Add Ubuntu Cloud Archive sources.
   # Allows us to fetch things such as updated libvirt.
   uca-sources:
@@ -503,8 +638,10 @@ parts:
     configflags:
       - "--localstatedir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common"
       - "--sysconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/etc"
+      - "--with-dpdk=$SNAPCRAFT_STAGE/dpdk"
     after:
       - patches
+      - dpdk
     override-build: |
       # Apply patches
       for patch in ${SNAPCRAFT_STAGE}/patches/openvswitch/*.patch; do
@@ -568,6 +705,7 @@ parts:
     after:
       - openstack-projects
       - uca-sources
+      - dpdk
     stage-packages:
       - seabios
       - ipxe-qemu
