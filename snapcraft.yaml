@@ -207,7 +207,11 @@ apps:
 #    plugs:
 #      - network
   ovs-dpdk-setup:
-    command: ovs-wrapper $SNAP/bin/ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
+    # set mem to 4096,4096 for NUMA systems
+    # set pmd, poll-mode driver threads:
+    # $SNAP/bin/ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=0x6
+    #
+    command: ovs-wrapper $SNAP/bin/ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true other_config:dpdk-socket-mem=1024,0 other_config:pmd-cpu-mask=0x3
     daemon: oneshot
     passthrough:
       after: [ovsdb-server]
