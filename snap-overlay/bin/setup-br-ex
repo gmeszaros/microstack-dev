@@ -10,6 +10,7 @@
 set -ex
 
 extcidr=$(snapctl get questions.ext-cidr)
+extcidr='10.20.20.1/24'
 
 # Create external integration bridge
 ovs-vsctl --retry --may-exist add-br br-ex -- set Bridge br-ex datapath_type=netdev

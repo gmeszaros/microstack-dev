@@ -170,7 +170,7 @@ apps:
     command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server --no-monitor --system-id=random start
     stop-command: ovs-wrapper $SNAP/share/openvswitch/scripts/ovs-ctl --no-ovsdb-server stop
     passthrough:
-      after: [ovsdb-server, ovs-dpdk-setup]
+      after: [ovsdb-server]
     daemon: forking
 #    plugs:
 #      - network
@@ -206,15 +206,6 @@ apps:
     command: ovs-wrapper $SNAP/bin/ovs-dpctl
 #    plugs:
 #      - network
-  ovs-dpdk-setup:
-    # set mem to 4096,4096 for NUMA systems
-    # set pmd, poll-mode driver threads:
-    # $SNAP/bin/ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=0x6
-    #
-    command: ovs-wrapper $SNAP/bin/ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true other_config:dpdk-socket-mem=1024,0 other_config:pmd-cpu-mask=0x3
-    daemon: oneshot
-    passthrough:
-      after: [ovsdb-server]
 
   external-bridge:
     command: bin/setup-br-ex
@@ -223,6 +214,16 @@ apps:
       after: [ovs-vswitchd]
 #    plugs:
 #      - network
+
+  ovs-dpdk-setup:
+    # set mem to 4096,4096 for NUMA systems
+    # set pmd, poll-mode driver threads:
+    # $SNAP/bin/ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=0x6
+    #
+    command: ovs-wrapper $SNAP/bin/ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true other_config:dpdk-socket-mem=1024,0 other_config:pmd-cpu-mask=0x3
+    daemon: oneshot
+    passthrough:
+      after: [external-bridge]
 
   # Libvirt/Qemu
   libvirtd:
@@ -365,6 +366,7 @@ parts:
     source-type: git
     # source-tag: v17.11 # LTS Version, comment out or change tag to what version you require.
     after:
+      - patches
       - uca-sources
     build-packages:
       #- python3-dev
@@ -623,7 +625,7 @@ parts:
     prime:
       - -*
 
-  openvswitch:
+  openvswitch-dpdk:
     # TODO: figure out a better way to fetch the version
     source: http://openvswitch.org/releases/openvswitch-2.10.2.tar.gz
     plugin: autotools
@@ -645,6 +647,7 @@ parts:
       - "--with-dpdk=$SNAPCRAFT_STAGE/dpdk"
     after:
       - patches
+      - uca-sources
       - dpdk
     override-build: |
       # Apply patches
@@ -663,7 +666,7 @@ parts:
     source: ./snap-wrappers/ovs
     plugin: dump
     after:
-      - openvswitch
+      - openvswitch-dpdk
     organize:
       ovs-wrapper: bin/ovs-wrapper
 
@@ -672,6 +675,8 @@ parts:
     plugin: autotools
     after:
       - patches
+      - uca-sources
+      - dpdk
     configflags:
       - --prefix=/usr
       - "--http-log-path=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/log/nginx-access.log"
@@ -709,7 +714,6 @@ parts:
     after:
       - openstack-projects
       - uca-sources
-      - dpdk
     stage-packages:
       - seabios
       - ipxe-qemu
