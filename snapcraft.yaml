@@ -365,26 +365,15 @@ parts:
     source: git://dpdk.org/dpdk-stable
     source-type: git
     # source-tag: v17.11 # LTS Version, comment out or change tag to what version you require.
-    #source: .
-    #source-subdir: dpdk-18.11
     after:
       - patches
       - uca-sources
-    make-parameters:
-            - T=x86_64-native-linuxapp-gcc 
-            - DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk
-            - RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic
     build-packages:
       - linux-headers-4.15.0-65-generic
       - build-essential
     override-build: |
       # staging libraries conflict with other parts packages
       unset CPPFLAGS
-      # snapcraft is creating empty dir, which breaks the below.
-      #rmdir --ignore-fail-on-non-empty dpdk-18.11
-      #apt source dpdk
-      # Fix issue with running apt source as root
-      #dpkg-source --before-build ${SNAPCRAFT_PART_BUILD}
       # make V=1 for verbose
       make install --directory ${SNAPCRAFT_PART_BUILD} T=x86_64-native-linuxapp-gcc DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic # RTE_KERNELDIR is only needed if kernel version is not the same as installed on build host.
 
