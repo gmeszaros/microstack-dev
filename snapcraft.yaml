@@ -365,89 +365,28 @@ parts:
     source: git://dpdk.org/dpdk-stable
     source-type: git
     # source-tag: v17.11 # LTS Version, comment out or change tag to what version you require.
+    #source: .
+    #source-subdir: dpdk-18.11
     after:
       - patches
       - uca-sources
+    make-parameters:
+            - T=x86_64-native-linuxapp-gcc 
+            - DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk
+            - RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic
     build-packages:
-      #- python3-dev
       - linux-headers-4.15.0-65-generic
       - build-essential
-    #stage-packages:
-      #- libnuma1
-      #- pciutils
-      #- hwdata
-      #- ibverbs-providers
-      #- libibverbs1
-      #- libnl-route-3-200
-      #- librte-bitratestats17.11
-      #- librte-bus-pci17.11
-      #- librte-bus-vdev17.11
-      #- librte-cmdline17.11
-      #- librte-cryptodev17.11 
-      #- librte-eal17.11
-      #- librte-ethdev17.11
-      #- librte-eventdev17.11
-      #- librte-gro17.11
-      #- librte-gso17.11
-      #- librte-hash17.11
-      #- librte-kni17.11
-      #- librte-kvargs17.11
-      #- librte-latencystats17.11
-      #- librte-mbuf17.11
-      #- librte-mempool-octeontx17.11
-      #- librte-mempool-ring17.11
-      #- librte-mempool-stack17.11
-      #- librte-mempool17.11
-      #- librte-metrics17.11
-      #- librte-net17.11
-      #- librte-pci17.11
-      #- librte-pdump17.11
-      #- librte-pmd-af-packet17.11
-      #- librte-pmd-ark17.11
-      #- librte-pmd-avp17.11
-      #- librte-pmd-bnxt17.11
-      #- librte-pmd-bond17.11
-      #- librte-pmd-crypto-scheduler17.11
-      #- librte-pmd-cxgbe17.11 
-      #- librte-pmd-e1000-17.11
-      #- librte-pmd-ena17.11
-      #- librte-pmd-enic17.11
-      #- librte-pmd-failsafe17.11
-      #- librte-pmd-fm10k17.11
-      #- librte-pmd-i40e17.11
-      #- librte-pmd-ixgbe17.11
-      #- librte-pmd-kni17.11
-      #- librte-pmd-lio17.11
-      #- librte-pmd-mlx4-17.11
-      #- librte-pmd-mlx5-17.11
-      #- librte-pmd-nfp17.11
-      #- librte-pmd-null-crypto17.11
-      #- librte-pmd-null17.11
-      #- librte-pmd-octeontx-ssovf17.11
-      #- librte-pmd-octeontx17.11
-      #- librte-pmd-pcap17.11
-      #- librte-pmd-qede17.11
-      #- librte-pmd-ring17.11 
-      #- librte-pmd-sfc-efx17.11
-      #- librte-pmd-skeleton-event17.11
-      #- librte-pmd-softnic17.11
-      #- librte-pmd-sw-event17.11
-      #- librte-pmd-tap17.11
-      #- librte-pmd-thunderx-nicvf17.11
-      #- librte-pmd-vhost17.11
-      #- librte-pmd-virtio17.11
-      #- librte-pmd-vmxnet3-uio17.11
-      #- librte-ring17.11
-      #- librte-sched17.11
-      #- librte-vhost17.11
-      #- python3-pyelftools
     override-build: |
-      #snapcraftctl build
-      # TODO: figure out why staging libraries conflict with other parts packages
+      # staging libraries conflict with other parts packages
       unset CPPFLAGS
+      # snapcraft is creating empty dir, which breaks the below.
+      #rmdir --ignore-fail-on-non-empty dpdk-18.11
+      #apt source dpdk
+      # Fix issue with running apt source as root
+      #dpkg-source --before-build ${SNAPCRAFT_PART_BUILD}
       # make V=1 for verbose
-      make install T=x86_64-native-linuxapp-gcc DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic # RTE_KERNELDIR is only needed if kernel version is not the same as installed on build host.
-      #snapcraftctl build
+      make install --directory ${SNAPCRAFT_PART_BUILD} T=x86_64-native-linuxapp-gcc DESTDIR=$SNAPCRAFT_PART_INSTALL/dpdk RTE_KERNELDIR=/usr/src/linux-headers-4.15.0-65-generic # RTE_KERNELDIR is only needed if kernel version is not the same as installed on build host.
 
   # Add Ubuntu Cloud Archive sources.
   # Allows us to fetch things such as updated libvirt.
@@ -625,7 +564,7 @@ parts:
     prime:
       - -*
 
-  openvswitch-dpdk:
+  openvswitch:
     # TODO: figure out a better way to fetch the version
     source: http://openvswitch.org/releases/openvswitch-2.10.2.tar.gz
     plugin: autotools
@@ -666,7 +605,7 @@ parts:
     source: ./snap-wrappers/ovs
     plugin: dump
     after:
-      - openvswitch-dpdk
+      - openvswitch
     organize:
       ovs-wrapper: bin/ovs-wrapper
 
