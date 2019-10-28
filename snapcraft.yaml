@@ -1,4 +1,4 @@
-name: microstack
+name: microstack2
 version: stein
 base: core18
 summary: OpenStack on your laptop.
