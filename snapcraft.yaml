@@ -318,52 +318,52 @@ apps:
 
   testpmd:
       command: dpdk/bin/testpmd
-      plugs:
-        - network
-        - network-bind
-        - network-control
-        - network-observe
-        - hardware-observe
-        #- hugepages-observe
-        #- hugepages-control
-        - process-control
-        - system-observe
-        #- dpdk-control
-        - kernel-module-control
-        - kernel-module-observe
+      #plugs:
+      #  - network
+      #  - network-bind
+      #  - network-control
+      #  - network-observe
+      #  - hardware-observe
+      #  #- hugepages-observe
+      #  #- hugepages-control
+      #  - process-control
+      #  - system-observe
+      #  #- dpdk-control
+      #  - kernel-module-control
+      #  - kernel-module-observe
 
   dpdk-devbind:
       command: dpdk/sbin/dpdk-devbind
-      plugs:
-        - network
-        - network-bind
-        - network-control
-        - network-observe
-        - hardware-observe
-        - system-observe
-        #- dpdk-control
-        - kernel-module-control
-        - kernel-module-observe
+      #plugs:
+      #  - network
+      #  - network-bind
+      #  - network-control
+      #  - network-observe
+      #  - hardware-observe
+      #  - system-observe
+      #  #- dpdk-control
+      #  - kernel-module-control
+      #  - kernel-module-observe
 
   dpdk-setup:
       command: dpdk/share/dpdk/usertools/dpdk-setup.sh
-      plugs:
-        - network
-        - network-bind
-        - network-control
-        - network-observe
-        - hardware-observe
-        #- system-observer
-        #- dpdk-control
-        - kernel-module-control
-        - kernel-module-observe
+      #plugs:
+      #  - network
+      #  - network-bind
+      #  - network-control
+      #  - network-observe
+      #  - hardware-observe
+      #  #- system-observer
+      #  #- dpdk-control
+      #  - kernel-module-control
+      #  - kernel-module-observe
 
 parts:
   dpdk:
     plugin: make
     source: git://dpdk.org/dpdk-stable
     source-type: git
-    # source-tag: v17.11 # LTS Version, comment out or change tag to what version you require.
+    source-tag: v18.11 # LTS Version, comment out or change tag to what version you require.
     after:
       - patches
       - uca-sources
