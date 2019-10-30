@@ -31,7 +31,7 @@ import pymysql
 import wget
 
 from init.config import Env, log
-
+from os import environ
 
 _env = Env().get_env()
 
@@ -160,7 +160,7 @@ def restart(service: str) -> None:
                     e.g. *rabbit*
 
     """
-    check('systemctl', 'restart', 'snap.microstack.{}'.format(service))
+    check('systemctl', 'restart', 'snap.' + environ['SNAP_INSTANCE_NAME'] + '.{}'.format(service))
 
 
 def download(url: str, output: str) -> None:

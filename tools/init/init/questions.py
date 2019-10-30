@@ -25,7 +25,7 @@ limitations under the License.
 
 import json
 from time import sleep
-from os import path
+from os import path, environ
 
 from init.shell import (check, call, check_output, shell, sql, nc_wait,
                         log_wait, restart, download)
@@ -278,8 +278,8 @@ class DatabaseSetup(Question):
 
         # Start keystone-uwsgi. We use snapctl, because systemd
         # doesn't yet know about the service.
-        check('snapctl', 'start', 'microstack.nginx')
-        check('snapctl', 'start', 'microstack.keystone-uwsgi')
+        check('snapctl', 'start', environ['SNAP_INSTANCE_NAME'] + '.nginx')
+        check('snapctl', 'start', environ['SNAP_INSTANCE_NAME'] + '.keystone-uwsgi')
 
         log.info('Configuring Keystone Fernet Keys ...')
         check('snap-openstack', 'launch', 'keystone-manage',
@@ -369,12 +369,12 @@ class NovaSetup(Question):
         # TODO: parse the output of `snapctl services` to get this
         # list automagically.
         for service in [
-                'microstack.nova-api',
-                'microstack.nova-api-metadata',
-                'microstack.nova-compute',
-                'microstack.nova-conductor',
-                'microstack.nova-scheduler',
-                'microstack.nova-uwsgi',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-api',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-api-metadata',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-compute',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-conductor',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-scheduler',
+                environ['SNAP_INSTANCE_NAME'] + '.nova-uwsgi',
         ]:
             check('snapctl', 'start', service)
 
@@ -427,11 +427,11 @@ class NeutronSetup(Question):
                      'http://{extgateway}:9696'.format(**_env))
 
         for service in [
-                'microstack.neutron-api',
-                'microstack.neutron-dhcp-agent',
-                'microstack.neutron-l3-agent',
-                'microstack.neutron-metadata-agent',
-                'microstack.neutron-openvswitch-agent',
+                environ['SNAP_INSTANCE_NAME'] + '.neutron-api',
+                environ['SNAP_INSTANCE_NAME'] + '.neutron-dhcp-agent',
+                environ['SNAP_INSTANCE_NAME'] + '.neutron-l3-agent',
+                environ['SNAP_INSTANCE_NAME'] + '.neutron-metadata-agent',
+                environ['SNAP_INSTANCE_NAME'] + '.neutron-openvswitch-agent',
         ]:
             check('snapctl', 'start', service)
 
@@ -516,8 +516,8 @@ class GlanceSetup(Question):
                       'http://{extgateway}:9292'.format(**_env))
 
         for service in [
-                'microstack.glance-api',
-                'microstack.registry',  # TODO rename this to glance-registery
+                environ['SNAP_INSTANCE_NAME'] + '.glance-api',
+                environ['SNAP_INSTANCE_NAME'] + '.registry',  # TODO rename this to glance-registery
         ]:
             check('snapctl', 'start', service)
 
@@ -604,7 +604,7 @@ class PostSetup(Question):
         restart('*virt*')
 
         # Start horizon
-        check('snapctl', 'start', 'microstack.horizon-uwsgi')
+        check('snapctl', 'start', environ['SNAP_INSTANCE_NAME'] + '.horizon-uwsgi')
 
         check('snapctl', 'set', 'initialized=true')
         log.info('Complete. Marked microstack as initialized!')
